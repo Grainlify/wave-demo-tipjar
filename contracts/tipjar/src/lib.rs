@@ -8,6 +8,7 @@ enum Key {
     Owner,
     Total,
     By(Address),
+    Goal,
 }
 
 #[contracterror]
@@ -49,6 +50,24 @@ impl TipJar {
         env.storage().persistent().set(&Key::By(from.clone()), &mine);
         env.events().publish((symbol_short!("tip"), from), (amount, note));
         Ok(total)
+    }
+
+    /// Owner-only: set a goal in points.
+    pub fn set_goal(env: Env, goal: u64) -> Result<(), Error> {
+        let owner: Address = env.storage().instance().get(&Key::Owner).ok_or(Error::NotInitialized)?;
+        owner.require_auth();
+        env.storage().instance().set(&Key::Goal, &goal);
+        Ok(())
+    }
+
+    /// Progress toward the goal in percent (0 when no goal is set), capped at 100.
+    pub fn progress(env: Env) -> u32 {
+        let goal: u64 = env.storage().instance().get(&Key::Goal).unwrap_or(0);
+        if goal == 0 {
+            return 0;
+        }
+        let total: u64 = env.storage().instance().get(&Key::Total).unwrap_or(0);
+        core::cmp::min(100, total * 100 / goal) as u32
     }
 
     pub fn total(env: Env) -> u64 {
