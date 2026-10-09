@@ -27,3 +27,17 @@ fn zero_tip_is_refused() {
     c.init(&owner);
     assert_eq!(c.try_tip(&owner, &0, &symbol_short!("x")), Err(Ok(Error::ZeroTip)));
 }
+
+#[test]
+fn progress_toward_goal() {
+    let (env, c) = setup();
+    let owner = Address::generate(&env);
+    let a = Address::generate(&env);
+    c.init(&owner);
+    assert_eq!(c.progress(), 0);
+    c.set_goal(&40);
+    c.tip(&a, &10, &symbol_short!("go"));
+    assert_eq!(c.progress(), 25);
+    c.tip(&a, &100, &symbol_short!("big"));
+    assert_eq!(c.progress(), 100);
+}
