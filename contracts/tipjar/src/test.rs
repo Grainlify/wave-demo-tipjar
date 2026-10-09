@@ -41,3 +41,16 @@ fn progress_toward_goal() {
     c.tip(&a, &100, &symbol_short!("big"));
     assert_eq!(c.progress(), 100);
 }
+
+#[test]
+fn counts_supporters_once() {
+    let (env, c) = setup();
+    let owner = Address::generate(&env);
+    let a = Address::generate(&env);
+    let b = Address::generate(&env);
+    c.init(&owner);
+    c.tip(&a, &1, &symbol_short!("x"));
+    c.tip(&a, &2, &symbol_short!("y"));
+    c.tip(&b, &3, &symbol_short!("z"));
+    assert_eq!(c.supporters(), 2);
+}

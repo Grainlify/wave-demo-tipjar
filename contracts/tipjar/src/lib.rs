@@ -9,6 +9,7 @@ enum Key {
     Total,
     By(Address),
     Goal,
+    Supporters,
 }
 
 #[contracterror]
@@ -46,7 +47,12 @@ impl TipJar {
         from.require_auth();
         let total: u64 = env.storage().instance().get(&Key::Total).unwrap_or(0) + amount as u64;
         env.storage().instance().set(&Key::Total, &total);
-        let mine: u64 = env.storage().persistent().get(&Key::By(from.clone())).unwrap_or(0) + amount as u64;
+        let before: u64 = env.storage().persistent().get(&Key::By(from.clone())).unwrap_or(0);
+        if before == 0 {
+            let n: u32 = env.storage().instance().get(&Key::Supporters).unwrap_or(0) + 1;
+            env.storage().instance().set(&Key::Supporters, &n);
+        }
+        let mine: u64 = before + amount as u64;
         env.storage().persistent().set(&Key::By(from.clone()), &mine);
         env.events().publish((symbol_short!("tip"), from), (amount, note));
         Ok(total)
@@ -68,6 +74,11 @@ impl TipJar {
         }
         let total: u64 = env.storage().instance().get(&Key::Total).unwrap_or(0);
         core::cmp::min(100, total * 100 / goal) as u32
+    }
+
+    /// How many different accounts have tipped.
+    pub fn supporters(env: Env) -> u32 {
+        env.storage().instance().get(&Key::Supporters).unwrap_or(0)
     }
 
     pub fn total(env: Env) -> u64 {
